@@ -10,22 +10,35 @@ var inputType = process.argv[2];
 var entries = process.argv.slice(3);
 var request = entries.join(" ");
 
-if (inputType === "my-tweets") {
-  getTweets();
-} else if (inputType === "spotify-this-song") {
-  if (request === "") {
-    getSong("Ace of Base, The Sign");
+handleInput(inputType, request);
+
+function handleInput(inputType, request) {
+  if (inputType === "my-tweets") {
+    getTweets();
+  } else if (inputType === "spotify-this-song") {
+    if (request === "") {
+      getSong("Ace of Base, The Sign");
+    } else {
+      getSong(request);
+    }
+  } else if (inputType === "movie-this") {
+    if (request === "") {
+      getMovie("Mr. Nobody");
+    } else {
+      getMovie(request);
+    }
   } else {
-    getSong(request);
+    doWhatitSays();
   }
-} else if (inputType === "movie-this") {
-  if (request === "") {
-    getMovie("Mr. Nobody");
-  } else {
-    getMovie(request);
-  }
-} else {
-  doWhatitSays();
+}
+
+// Log Out Results
+
+function logResults(output) {
+  fs.appendFile("log.txt", output, function(err) {
+    if (err) throw err;
+    console.log(output);
+  });
 }
 
 // Twitter
@@ -47,13 +60,10 @@ function getTweets() {
   client.get("statuses/user_timeline", params, function(err, tweets, response) {
     if (!err) {
       tweets.forEach(function(tweet) {
-        var tweetOutput =
+        var output =
           moment(tweet.created_at).format("LLLL") + "\n" + tweet.text + "\n\n";
 
-        fs.appendFile("log.txt", tweetOutput, function(err) {
-          if (err) throw err;
-          console.log(tweetOutput);
-        });
+        logResults(output);
       });
     }
   });
@@ -69,7 +79,7 @@ function getSong(request) {
 
   spotify.search({ type: "track", query: request }, function(err, data) {
     if (!err) {
-      var songOutput =
+      var output =
         "Artist: " +
         data.tracks.items[0].album.artists[0].name +
         "\n" +
@@ -81,12 +91,9 @@ function getSong(request) {
         "\n" +
         "Preview URL: " +
         data.tracks.items[0].preview_url +
-        "\n";
+        "\n\n";
 
-      fs.appendFile("log.txt", songOutput, function(err) {
-        if (err) throw err;
-        console.log(songOutput);
-      });
+      logResults(output);
     }
   });
 }
@@ -101,7 +108,7 @@ function getMovie(request) {
   omdbRequest.get(omdbUrl, function(err, results, body) {
     if (!err) {
       var movieObj = JSON.parse(body);
-      var movieOutput =
+      var output =
         "Title: " +
         movieObj.Title +
         "\n" +
@@ -109,7 +116,10 @@ function getMovie(request) {
         movieObj.Year +
         "\n" +
         "IMDB Rating: " +
-        movieObj.imdbRating +
+        movieObj.Ratings[0].Value +
+        "\n" +
+        "Rotten Tomatoes Rating: " +
+        movieObj.Ratings[1].Value +
         "\n" +
         "Country: " +
         movieObj.Country +
@@ -121,12 +131,10 @@ function getMovie(request) {
         movieObj.Plot +
         "\n" +
         "Actors: " +
-        movieObj.Actors;
+        movieObj.Actors +
+        "\n\n";
 
-      fs.appendFile("log.txt", movieOutput, function(err) {
-        if (err) throw err;
-        console.log(movieOutput);
-      });
+      logResults(output);
     }
   });
 }
@@ -134,16 +142,17 @@ function getMovie(request) {
 //  Do What It Says
 
 function doWhatitSays() {
-  var randomArray;
   fs.readFile("random.txt", function read(err, data) {
     if (err) {
       throw err;
     }
-    randomArray = data;
-   
-   fs.appendFile("log.txt", randomArray, function(err) {
-    if (err) throw err;
-    console.log('test:' + randomArray);
+
+    var lines = data.toString("utf-8").split("\n");
+
+    var randLine = lines[Math.floor(Math.random() * lines.length)];
+
+    var lineArray = randLine.split(",");
+
+    handleInput(lineArray[0], lineArray[1]);
   });
-});
 }
