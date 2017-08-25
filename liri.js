@@ -2,7 +2,7 @@ var fs = require("fs");
 var moment = require("moment");
 var Twitter = require("twitter");
 var Spotify = require("node-spotify-api");
-var request = require("request");
+var omdbRequest = require("request");
 
 var keys = require("./keys.js");
 
@@ -25,6 +25,7 @@ if (inputType === "my-tweets") {
     getMovie(request);
   }
 } else {
+  doWhatitSays();
 }
 
 // Twitter
@@ -38,26 +39,22 @@ function getTweets() {
   });
 
   var params = {
-    screen_name: "Liri Bootcamp Homework",
+    screen_name: "tweeteralias",
     count: 20,
     result_type: "recent"
   };
 
-  client.get("statuses/user_timeline", params, function(
-    error,
-    tweets,
-    response
-  ) {
-    if (!error) {
-    tweets.forEach(function(tweet) {
-      var tweetOutput =
-        moment(tweet.created_at).format("LLLL") + "\n" + tweet.text + "\n";
+  client.get("statuses/user_timeline", params, function(err, tweets, response) {
+    if (!err) {
+      tweets.forEach(function(tweet) {
+        var tweetOutput =
+          moment(tweet.created_at).format("LLLL") + "\n" + tweet.text + "\n\n";
 
-      fs.appendFile("log.txt", tweetOutput, function(err) {
-        if (err) throw err;
-        console.log(tweetOutput);
+        fs.appendFile("log.txt", tweetOutput, function(err) {
+          if (err) throw err;
+          console.log(tweetOutput);
+        });
       });
-    });
     }
   });
 }
@@ -73,10 +70,18 @@ function getSong(request) {
   spotify.search({ type: "track", query: request }, function(err, data) {
     if (!err) {
       var songOutput =
-        data.tracks.items[0].album.artists[0].name + "\n" +
-        request + "\n" +
-        data.tracks.items[0].album.name + "\n" +
-        data.tracks.items[0].preview_url + "\n";
+        "Artist: " +
+        data.tracks.items[0].album.artists[0].name +
+        "\n" +
+        "Song Name: " +
+        data.tracks.items[0].name +
+        "\n" +
+        "Album Name: " +
+        data.tracks.items[0].album.name +
+        "\n" +
+        "Preview URL: " +
+        data.tracks.items[0].preview_url +
+        "\n";
 
       fs.appendFile("log.txt", songOutput, function(err) {
         if (err) throw err;
@@ -89,29 +94,56 @@ function getSong(request) {
 // OMDB
 
 function getMovie(request) {
-  var omdb = new Omdb({
-    api_key: keys.exports.omdbKeys.api_key
-  });
+  var omdbKey = keys.omdbKeys.api_key;
 
-  console.log("in function");
+  var omdbUrl = "http://www.omdbapi.com/?apikey=" + omdbKey + "&t=" + request;
 
-  request.get(request, function(err, results) {
+  omdbRequest.get(omdbUrl, function(err, results, body) {
     if (!err) {
-      results.forEach(function(movie) {
-        var movieOutput = [
-          JSON.parse(body).title,
-          JSON.parse(body).year,
-          JSON.parse(body).imdbRating,
-          JSON.parse(body).country,
-          JSON.parse(body).language,
-          JSON.parse(body).plot,
-          JSON.parse(body).actors];
+      var movieObj = JSON.parse(body);
+      var movieOutput =
+        "Title: " +
+        movieObj.Title +
+        "\n" +
+        "Year: " +
+        movieObj.Year +
+        "\n" +
+        "IMDB Rating: " +
+        movieObj.imdbRating +
+        "\n" +
+        "Country: " +
+        movieObj.Country +
+        "\n" +
+        "Language: " +
+        movieObj.Language +
+        "\n" +
+        "Plot: " +
+        movieObj.Plot +
+        "\n" +
+        "Actors: " +
+        movieObj.Actors;
 
-        fs.appendFile("log.txt", movieOutput, function(err) {
-          if (err) throw err;
-          console.log(movieOutput);
-        });
+      fs.appendFile("log.txt", movieOutput, function(err) {
+        if (err) throw err;
+        console.log(movieOutput);
       });
     }
   });
+}
+
+//  Do What It Says
+
+function doWhatitSays() {
+  var randomArray;
+  fs.readFile("random.txt", function read(err, data) {
+    if (err) {
+      throw err;
+    }
+    randomArray = data;
+   
+   fs.appendFile("log.txt", randomArray, function(err) {
+    if (err) throw err;
+    console.log('test:' + randomArray);
+  });
+});
 }

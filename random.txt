@@ -1,1 +1,8 @@
-spotify-this-song,"I Want it That Way"
+spotify-this-song,I Want it That Way
+movie-this,Fargo
+my-tweets
+movie-this,Wonder Woman
+spotify-this-song,Veronica
+my-tweets
+movie-this,The Hunger Games
+spotify-this-song
