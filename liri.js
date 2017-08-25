@@ -2,7 +2,7 @@ var fs = require("fs");
 var moment = require("moment");
 var Twitter = require("twitter");
 var Spotify = require("node-spotify-api");
-// const OMDBAPI = require("omdbapi");
+var request = require("request");
 
 var keys = require("./keys.js");
 
@@ -43,62 +43,75 @@ function getTweets() {
     result_type: "recent"
   };
 
+  client.get("statuses/user_timeline", params, function(
+    error,
+    tweets,
+    response
+  ) {
+    if (!error) {
+    tweets.forEach(function(tweet) {
+      var tweetOutput =
+        moment(tweet.created_at).format("LLLL") + "\n" + tweet.text + "\n";
 
-
-  client.get(
-    "statuses/user_timeline",
-    params,
-    function(error, tweets, response) {
-      if (!error) {
-        tweets.forEach(function(tweet) {
-          var output = moment(tweet.created_at).format("LLLL") + "\n" + tweet.text + "\n";
-          fs.appendFile("log.txt", output, function(err) {
-            if (err) throw err;
-            console.log(
-              output
-            );
-          });
-        });
-      }
-    },
-    // Spotify
-
-    function getSong(request) {
-      var spotify = new Spotify({
-        id: keys.spotifyKeys.id,
-        secret: keys.spotifyKeys.secret
+      fs.appendFile("log.txt", tweetOutput, function(err) {
+        if (err) throw err;
+        console.log(tweetOutput);
       });
+    });
+    }
+  });
+}
 
-      spotify.search({ type: "track", query: request }, function(err, data) {
-        if (err) {
-          console.log("Error occurred: ", err);
-        } else console.log(data.tracks.items[0].album.artists[0].name);
-        console.log(request);
-        console.log(data.tracks.items[0].album.name);
-        console.log(data.tracks.items[0].preview_url);
-      });
-    },
-    // OMDB
+// Spotify
 
-    function getMovie(request) {
-      var omdb = new omdb({
-        api_key: keys.exports.omdbKeys.api_key
-      });
-      console.log("in function");
+function getSong(request) {
+  var spotify = new Spotify({
+    id: keys.spotifyKeys.id,
+    secret: keys.spotifyKeys.secret
+  });
 
-      omdb.search(request, function(results) {
-        if (err) {
-          console.log("Error occurred: ", err);
-        } else {
-          console.log(JSON.parse(body).title);
-          console.log(JSON.parse(body).year);
-          console.log(JSON.parse(body).imdbRating);
-          console.log(JSON.parse(body).country);
-          console.log(JSON.parse(body).language);
-          console.log(JSON.parse(body).plot);
-          console.log(JSON.parse(body).actors);
-        }
+  spotify.search({ type: "track", query: request }, function(err, data) {
+    if (!err) {
+      var songOutput =
+        data.tracks.items[0].album.artists[0].name + "\n" +
+        request + "\n" +
+        data.tracks.items[0].album.name + "\n" +
+        data.tracks.items[0].preview_url + "\n";
+
+      fs.appendFile("log.txt", songOutput, function(err) {
+        if (err) throw err;
+        console.log(songOutput);
       });
     }
-  );
+  });
+}
+
+// OMDB
+
+function getMovie(request) {
+  var omdb = new Omdb({
+    api_key: keys.exports.omdbKeys.api_key
+  });
+
+  console.log("in function");
+
+  request.get(request, function(err, results) {
+    if (!err) {
+      results.forEach(function(movie) {
+        var movieOutput = [
+          JSON.parse(body).title,
+          JSON.parse(body).year,
+          JSON.parse(body).imdbRating,
+          JSON.parse(body).country,
+          JSON.parse(body).language,
+          JSON.parse(body).plot,
+          JSON.parse(body).actors];
+
+        fs.appendFile("log.txt", movieOutput, function(err) {
+          if (err) throw err;
+          console.log(movieOutput);
+        });
+      });
+    }
+  });
 }
